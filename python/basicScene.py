@@ -15,6 +15,7 @@ def main(filename,shadingrate=10,pixelvar=0.1,
   # make RI calls after this function else we get a core dump
   ri.Begin(filename)
   ri.Option('searchpath', {'string archive':'./assets/:@'})
+  ri.Option('searchpath', {'string texture':'../sourceImages/:@'})
 
   # now we add the display element using the usual elements
   # FILENAME DISPLAY Type Output format
@@ -31,7 +32,7 @@ def main(filename,shadingrate=10,pixelvar=0.1,
   ri.Projection(ri.PERSPECTIVE,{ri.FOV:fov})
 
   #ri.Rotate(12,1,0,0)
-  ri.Translate( 0, 0 ,5.5)
+  ri.Translate( 0, 0 ,3.5)
 
 
   # now we start our world
@@ -39,7 +40,13 @@ def main(filename,shadingrate=10,pixelvar=0.1,
   #######################################################################
   #Lighting We need geo to emit light
   #######################################################################
-  # no lights for this one!
+  ri.TransformBegin()
+  ri.Rotate(-90,1,0,0)
+  ri.Rotate(180,0,0,1)
+  ri.Light( 'PxrDomeLight', 'domeLight', { 
+            'string lightColorMap'  : 'lightMap.tex'
+   })
+  ri.TransformEnd()
   #######################################################################
   # end lighting
   #######################################################################
@@ -57,10 +64,17 @@ def main(filename,shadingrate=10,pixelvar=0.1,
   })
   ri.Attribute( 'user' , {'string __materialid' : ['mainplate'] })
   # simple bxdf for now
-  ri.Bxdf ('PxrDiffuse' , 'mainplate', 
+  ri.Bxdf ('PxrSurface' , 'mainplate', 
   {
+      'float diffuseGain' : [0.8],
       'reference color diffuseColor'  :['plateBase:resultRGB']  , 
-      'string __materialid' : ['mainplate']
+      'int specularFresnelMode' : [1],
+      'color specularEdgeColor' : [1 ,1 ,1],
+      'color specularIor' : [4.3696842, 2.916713, 1.654698],
+      'color specularExtinctionCoeff' : [0.1, 0.1, 0.1],
+      'float specularRoughness' : [0.01], 
+      'integer specularModelType' : [1], 
+      'string __materialid' : ['mainplate'],
   })
   ri.Polygon({ 'P' : [-1 , 1 , 0, 
                        1 , 1 , 0, 
@@ -73,9 +87,17 @@ def main(filename,shadingrate=10,pixelvar=0.1,
   ri.AttributeBegin()
   ri.Attribute( 'user' , {'string __materialid' : ['portHole'] })
   # simple bxdf for now
-  ri.Bxdf ('PxrDiffuse' , 'portHole', 
+  ri.Bxdf ('PxrSurface' , 'portHole', 
   {
       'color diffuseColor'  : [0.8 ,0.0, 0.0] , 
+         'float diffuseGain' : [0.8],
+      'int specularFresnelMode' : [1],
+      'color specularEdgeColor' : [1 ,1 ,1],
+      'color specularIor' : [4.3696842, 2.916713, 1.654698],
+      'color specularExtinctionCoeff' : [0.1, 0.1, 0.1],
+      'float specularRoughness' : [0.01], 
+      'integer specularModelType' : [1], 
+
       'string __materialid' : ['portHole']
   })
   ri.TransformBegin()
