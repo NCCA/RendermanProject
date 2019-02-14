@@ -81,7 +81,6 @@ Which gives this
 
 ![](sourceImages/latestRender.png)
 
-That's the end of the first hour.
 
 # More reference.
 
