@@ -1,24 +1,26 @@
 # Renderman Lookdev Project Hour 2
 
-The idea of this project is to try and do 1 hour a week look dev to replicate the MSc rendering project. I will take a simple scene (see image below) and try to recreate and model it using Renderman, OSL and Python.
-
-For each hour I will make a branch to that the progress of the project can be seen as well as a write up [Report.md](Report.md)
-
-## Basic Idea
-
-The basic idea of this project came to me when I was on the ferry home and looked at the panel on the side of the ferry.
-
-![source image](sourceImages/reference1.png)
-
-I noticed whilst quite a simple shape / surface it had very complex texture and material properties. Whilst this could be represented by a simple model of a plane and a torus (I will add pipes later) the materials were very complex.
-
-I intend to model the following elements for the project which should provide enough of a challenge for the project, whilst at present I only have one image I will also get many more as I travel into work on the same ferry every day.
 
 ## Modeling
 
-I have use a simple plane with a PxrRamp Pattern for the main plate and a torus for the porthole. This will do for the initial look development and I will add more when needed.
-
+I have updated the model to use PxrSurface and a new DomeLight 
 ```
+# now we start our world
+ri.WorldBegin()
+#######################################################################
+#Lighting We need geo to emit light
+#######################################################################
+ri.TransformBegin()
+ri.Rotate(-90,1,0,0)
+ri.Rotate(180,0,0,1)
+ri.Light( 'PxrDomeLight', 'domeLight', { 
+          'string lightColorMap'  : 'lightMap.tex'
+  })
+ri.TransformEnd()
+#######################################################################
+# end lighting
+#######################################################################
+
 ri.AttributeBegin()
 ri.Pattern('PxrRamp','plateBase',
 {
@@ -32,10 +34,17 @@ ri.Pattern('PxrRamp','plateBase',
 })
 ri.Attribute( 'user' , {'string __materialid' : ['mainplate'] })
 # simple bxdf for now
-ri.Bxdf ('PxrDiffuse' , 'mainplate', 
+ri.Bxdf ('PxrSurface' , 'mainplate', 
 {
+    'float diffuseGain' : [0.8],
     'reference color diffuseColor'  :['plateBase:resultRGB']  , 
-    'string __materialid' : ['mainplate']
+    'int specularFresnelMode' : [1],
+    'color specularEdgeColor' : [1 ,1 ,1],
+    'color specularIor' : [4.3696842, 2.916713, 1.654698],
+    'color specularExtinctionCoeff' : [0.1, 0.1, 0.1],
+    'float specularRoughness' : [0.01], 
+    'integer specularModelType' : [1], 
+    'string __materialid' : ['mainplate'],
 })
 ri.Polygon({ 'P' : [-1 , 1 , 0, 
                       1 , 1 , 0, 
@@ -44,30 +53,37 @@ ri.Polygon({ 'P' : [-1 , 1 , 0,
                     ]})
 ri.AttributeEnd()
 
+
 ri.AttributeBegin()
 ri.Attribute( 'user' , {'string __materialid' : ['portHole'] })
 # simple bxdf for now
-ri.Bxdf ('PxrDiffuse' , 'portHole', 
+ri.Bxdf ('PxrSurface' , 'portHole', 
 {
     'color diffuseColor'  : [0.8 ,0.0, 0.0] , 
+        'float diffuseGain' : [0.8],
+    'int specularFresnelMode' : [1],
+    'color specularEdgeColor' : [1 ,1 ,1],
+    'color specularIor' : [4.3696842, 2.916713, 1.654698],
+    'color specularExtinctionCoeff' : [0.1, 0.1, 0.1],
+    'float specularRoughness' : [0.01], 
+    'integer specularModelType' : [1], 
+
     'string __materialid' : ['portHole']
 })
 ri.TransformBegin()
 ri.Translate(0.2 ,-0.3,0)
 ri.Torus(0.2,0.05,180,360,360)
 ri.TransformEnd()
-
 ri.AttributeEnd()
-
 ```
 
 Which gives this
 
-![](sourceImages/firstModel.png)
+![](sourceImages/latestRender.png)
 
 That's the end of the first hour.
 
-# Hours 2 more reference.
+# More reference.
 
 Most of today has been about taking reference images and analyzing them for designing the shading networks I need.
 
