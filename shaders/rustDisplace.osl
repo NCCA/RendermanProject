@@ -1,0 +1,18 @@
+surface rustDisplace (
+              float fuzz=0.025,
+              float repeatU=1,
+              float repeatV=1,
+              output float resultF=0,
+              output color resultRGB=0)
+{
+   
+    float dist;
+    float inDisk;
+    float uu=mod(u*repeatU,1);
+    float vv=mod(v*repeatV,1);
+
+    dist=sqrt((uu-0.5)*(uu-0.5)+(vv-0.5)*(vv-0.5));
+    resultF=1-smoothstep(0.3-fuzz,0.3+fuzz,dist);
+    resultRGB=color(resultF);
+}
+
