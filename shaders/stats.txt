@@ -3,12 +3,12 @@ copyright (c) 1988-2018 Pixar.
 linked Sun Dec 09 20:22:29 2018 PST @1923583
 build osxSierra_x86-64_clang7icc170_external_release
 
-Rendered on Fri Feb 15 08:05:22 GMT 2019
+Rendered on Mon Feb 18 09:59:00 GMT 2019
 Rendering at 1024x720 pixels, 64 maxsamples
 	"ferry.exr" (mode = Ci,a, type = it)
 
-       Max resident mem: 409.89 MB
-       Page faults: 96, Page reclaims: 82190, Swaps: 0
+       Max resident mem: 406.85 MB
+       Page faults: 19, Page reclaims: 80253, Swaps: 0
 
        Real time:     00:03
        User time:     00:13

@@ -16,7 +16,7 @@ def main(filename,shadingrate=10,pixelvar=0.1,
   # this is the begining of the rib archive generation we can only
   # make RI calls after this function else we get a core dump
   ri.Begin(filename)
-  ri.Option('searchpath', {'string archive':'../assets/:@'})
+  ri.Option('searchpath', {'string archive':'./:@'})
   ri.Option('searchpath', {'string texture':'../sourceImages/:@'})
 
   # now we add the display element using the usual elements
@@ -40,13 +40,6 @@ def main(filename,shadingrate=10,pixelvar=0.1,
   # now we start our world
   ri.WorldBegin()
 
-  plate=ri.ObjectBegin()
-  ri.Polygon({ 'P' : [-1 , 1 , 0, 
-                       1 , 1 , 0, 
-                       1,  -1.4 , 0, 
-                      -1,  -1.4 , 0
-                      ]})
-  ri.ObjectEnd()
 
 
   #######################################################################
@@ -64,55 +57,65 @@ def main(filename,shadingrate=10,pixelvar=0.1,
   #######################################################################
 
   ri.AttributeBegin()
-  """
-  """
+
+  ri.Attribute ('trace' ,{'int displacements' : [ 1 ], "int autobias" : [1] ,"float bias" : [0.1]})
+  
+  ri.Attribute ('displacementbound', {'float sphere' : [2], 'string coordinatesystem' : ['object']})
+
   ri.Pattern('rustDisplace','rustDisplace', 
   { 
-    'float repeatU' :[4],
-    'float repeatV' : [2] 
+    'float dispScale' : [0.015],
+    'float spread' : [12.638],
+    'float pointSpreadX' : [510.0],
+    'float pointSpreadY' : [210.0],
+     
   })
-  """
-  ## modes see  https://rmanwiki.pixar.com/display/REN/PxrDispTransform
-  vectorSpace={'World' : 1 , 'Object' : 2 , 'Tangent' : 3, 'Current' : 4}
-  displacementType={'Scalar' : 1, 'Vector' : 2 , 'Mudbox' : 3, 'Zbrush' : 4}
-  remapMode={'None' : 1 , 'Centered' : 2 , 'Interpolate' : 3}
-  dispSize=0.5
-
-  ri.Pattern('PxrDispTransform','DispTransform',
-  {
-    'reference float dispScalar' : ['rustDisplace:resultF'],
-    'uniform float dispDepth' : [dispSize],
-    'uniform float dispHeight' : [dispSize],
-    'uniform int dispType' : [displacementType.get('Zbrush')],  
-    'uniform int vectorSpace' : [vectorSpace.get('Tangent')], 
-    'uniform int dispRemapMode' : [remapMode.get('Centered')], 
-    'uniform float dispCenter' : [0]
-  })
-  """
-  ri.Attribute ('trace' ,{'int displacements' : [ 1 ]})
-  ri.Attribute ('displacementbound', {'float sphere' : [20], 'string coordinatesystem' : ['shader']})
+  
+  
+  
   
   ri.Displace( 'PxrDisplace' ,'displacement' ,
   {
     'int enabled' : [1],
-    'float dispAmount' : [2.5],
+    'float dispAmount' : [1.0],
     'reference float dispScalar' : ['rustDisplace:resultF'] ,
     'vector dispVector' : [0, 0 ,0],
     'vector modelDispVector' : [0, 0 ,0],
-    '__instanceid' : ['displacement']
+    'string __materialid' : ["mainplate"]
   })
-	
 
+  ri.Attribute( 'user' , {'string __materialid' : ['mainplate'] })
+  plate=ri.ObjectBegin()
+  # ri.Polygon({ 'P' : [-1 , 1 , 0, 
+  #                      1 , 1 , 0, 
+  #                      1,  -1.4 , 0, 
+  #                     -1,  -1.4 , 0
+  #                     ]})
+  ri.HierarchicalSubdivisionMesh("catmull-clark" ,[4 ,4 ,4 ,4, 4 ,4 ,4 ,4 ,4], 
+    [4, 5, 1, 0, 5, 6, 2, 1, 6, 7, 3, 2, 8 ,9, 5, 4, 9 ,10 ,6 ,5 ,10, 11, 7, 6, 12, 13, 9 ,8 ,13, 14, 10, 9, 14, 15, 11, 10], 
+    ["interpolateboundary"] ,[1 ,0 ,0] ,[2] ,[] ,[], 
+    {"P"  : [-1, -1, 0 ,-0.333333, -1, 0 ,0.333333, -1, 0, 1 ,-1, 0,      -1 ,-0.333333 ,0, -0.333333, -0.333333 ,0 ,0.333333 ,-0.333333, 0, 1, -0.333333 ,0,
+      -1, 0.333333 ,0, -0.333333 ,0.333333, 0, 0.333333, 0.333333 ,0, 1, 0.333333, 0,
+      -1, 1, 0, -0.333333, 1 ,0 ,0.333333, 1, 0 ,1 ,1, 0,]} )
+
+  
+
+
+  ri.ObjectEnd()
   ri.Bxdf ('PxrSurface' , 'mainplate', 
   {
-    'reference color diffuseColor' : ['rustDisplace:resultRGB'] ,  
+    'color diffuseColor' : [0.6,0.6,0.6] ,
+    'string __materialid' : ['mainplate']  
   })
-  ri.Attribute( 'user' , {'string __materialid' : ['mainplate'] })
+  
+  
+
   # top left front  
   ri.TransformBegin()
   ri.Scale(0.5,0.5,0.5)
   ri.Translate(-1,1.2,0)
   ri.ObjectInstance(plate)
+
   ri.TransformEnd()
   # top right flat 45
   ri.TransformBegin()
@@ -127,6 +130,7 @@ def main(filename,shadingrate=10,pixelvar=0.1,
   ri.Translate(-1,-1.2,0)
   ri.Rotate(35,0,1,0)
   ri.ObjectInstance(plate)
+
   ri.TransformEnd()
   # bottom right
   ri.TransformBegin()
@@ -134,6 +138,7 @@ def main(filename,shadingrate=10,pixelvar=0.1,
   ri.Translate(1,-1.2,0)
   ri.Rotate(-25,0,1,0)
   ri.ObjectInstance(plate)
+
   ri.TransformEnd()
   
 

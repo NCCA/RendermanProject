@@ -1,6 +1,8 @@
-# Renderman Lookdev Project Hour 3
+# Renderman Lookdev Project Hour 4
 
-A very frustrating hour, managed to get a basic setup for testing shaders and wanted to get basic displacement working but it's not going yet. Will continue next time.
+The issue with the displacements took a long time to find, it was due to setting the displacement shader after the mesh. As I was using ObjectInstance this made sense however it seems the displacement attribute was not getting passed to the mesh as it needed to be called first. 
+
+I have now modified the test scene to use a subdiv surface as this work better with displacement's as well.
 
 ![](writeupImages/shaderTest.png)
 
@@ -8,68 +10,79 @@ A very frustrating hour, managed to get a basic setup for testing shaders and wa
 ## Test scene
 
 ```
-plate=ri.ObjectBegin()
-ri.Polygon({ 'P' : [-1 , 1 , 0, 
-                      1 , 1 , 0, 
-                      1,  -1.4 , 0, 
-                    -1,  -1.4 , 0
-                    ]})
-ri.ObjectEnd()
+ri.AttributeBegin()
+
+ri.Attribute ('trace' ,{'int displacements' : [ 1 ], "int autobias" : [1] ,"float bias" : [0.1]})
+
+ri.Attribute ('displacementbound', {'float sphere' : [2], 'string coordinatesystem' : ['object']})
+
+ri.Pattern('rustDisplace','rustDisplace', 
+{ 
+  'float dispScale' : [0.015],
+  'float spread' : [12.638],
+  'float pointSpreadX' : [510.0],
+  'float pointSpreadY' : [210.0],
+    
+})
+
+
+
+
+ri.Displace( 'PxrDisplace' ,'displacement' ,
+{
+  'int enabled' : [1],
+  'float dispAmount' : [1.0],
+  'reference float dispScalar' : ['rustDisplace:resultF'] ,
+  'vector dispVector' : [0, 0 ,0],
+  'vector modelDispVector' : [0, 0 ,0],
+  'string __materialid' : ["mainplate"]
+})
+
 ri.Attribute( 'user' , {'string __materialid' : ['mainplate'] })
-# top left front  
-ri.TransformBegin()
-ri.Scale(0.5,0.5,0.5)
-ri.Translate(-1,1.2,0)
-ri.ObjectInstance(plate)
-ri.TransformEnd()
-# top right flat 45
-ri.TransformBegin()
-ri.Scale(0.5,0.5,0.5)
-ri.Translate(1,1.2,0)
-ri.Rotate(45,1,0,0)
-ri.ObjectInstance(plate)
-ri.TransformEnd()
-# bottom left  
-ri.TransformBegin()
-ri.Scale(0.5,0.5,0.5)
-ri.Translate(-1,-1.2,0)
-ri.Rotate(35,0,1,0)
-ri.ObjectInstance(plate)
-ri.TransformEnd()
-# bottom right
-ri.TransformBegin()
-ri.Scale(0.5,0.5,0.5)
-ri.Translate(1,-1.2,0)
-ri.Rotate(-25,0,1,0)
-ri.ObjectInstance(plate)
-ri.TransformEnd()
+plate=ri.ObjectBegin()
+ri.HierarchicalSubdivisionMesh("catmull-clark" ,[4 ,4 ,4 ,4, 4 ,4 ,4 ,4 ,4], 
+  [4, 5, 1, 0, 5, 6, 2, 1, 6, 7, 3, 2, 8 ,9, 5, 4, 9 ,10 ,6 ,5 ,10, 11, 7, 6, 12, 13, 9 ,8 ,13, 14, 10, 9, 14, 15, 11, 10], 
+  ["interpolateboundary"] ,[1 ,0 ,0] ,[2] ,[] ,[], 
+  {"P"  : [-1, -1, 0 ,-0.333333, -1, 0 ,0.333333, -1, 0, 1 ,-1, 0,      -1 ,-0.333333 ,0, -0.333333, -0.333333 ,0 ,0.333333 ,-0.333333, 0, 1, -0.333333 ,0,
+    -1, 0.333333 ,0, -0.333333 ,0.333333, 0, 0.333333, 0.333333 ,0, 1, 0.333333, 0,
+    -1, 1, 0, -0.333333, 1 ,0 ,0.333333, 1, 0 ,1 ,1, 0,]} )
 
 
-ri.AttributeEnd()
-
+ri.ObjectEnd()
+ri.Bxdf ('PxrSurface' , 'mainplate', 
+{
+  'color diffuseColor' : [0.6,0.6,0.6] ,
+  'string __materialid' : ['mainplate']  
+})
 ```
 
 ## Shader
 
-I modified the basic disc shader to work with the displacments so far it's not doing what I wanted.
-
+Now have the beginnings of a shader based on this one https://thebookofshaders.com/edit.php#11/lava-lamp.frag needs more work.
 ```
 surface rustDisplace (
-              float fuzz=0.025,
-              float repeatU=1,
-              float repeatV=1,
-              output float resultF=0,
-              output color resultRGB=0)
+              float spread=2.638,
+              float pointSpreadX=1.0,
+              float pointSpreadY=1.0,
+              float dispScale=5.0,
+              output float resultF=0
+              )
 {
-   
-    float dist;
-    float inDisk;
-    float uu=mod(u*repeatU,1);
-    float vv=mod(v*repeatV,1);
+float uu=u*pointSpreadX;
+float vv=v*pointSpreadY;
+vv *=pointSpreadX/pointSpreadY;
+uu *=pointSpreadX/pointSpreadY;
 
-    dist=sqrt((uu-0.5)*(uu-0.5)+(vv-0.5)*(vv-0.5));
-    resultF=1-smoothstep(0.3-fuzz,0.3+fuzz,dist);
-    resultRGB=color(resultF);
+point pos = point(uu,vv,0);
+
+// Add a random position
+vector vel = vector(spread);//vector(3.0*0.1);
+float DF = snoise(pos+vel)*0.25+0.25;
+float a= snoise(pos*vector(cos(3.0*0.15),sin(3.0*0.1)*0.1,0.0))*spread;
+
+vel = point(cos(radians(a)),sin(radians(a)),0);
+DF += snoise(pos+vel)*.25+.25;
+resultF=-(smoothstep(.7,.75,DF-floor(DF)))*dispScale; //fract)
 }
 ```
 

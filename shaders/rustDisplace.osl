@@ -1,18 +1,26 @@
-surface rustDisplace (
-              float fuzz=0.025,
-              float repeatU=1,
-              float repeatV=1,
-              output float resultF=0,
-              output color resultRGB=0)
-{
-   
-    float dist;
-    float inDisk;
-    float uu=mod(u*repeatU,1);
-    float vv=mod(v*repeatV,1);
 
-    dist=sqrt((uu-0.5)*(uu-0.5)+(vv-0.5)*(vv-0.5));
-    resultF=1-smoothstep(0.3-fuzz,0.3+fuzz,dist);
-    resultRGB=color(resultF);
+surface rustDisplace (
+              float spread=2.638,
+              float pointSpreadX=1.0,
+              float pointSpreadY=1.0,
+              float dispScale=5.0,
+              output float resultF=0
+              )
+{
+float uu=u*pointSpreadX;
+float vv=v*pointSpreadY;
+vv *=pointSpreadX/pointSpreadY;
+uu *=pointSpreadX/pointSpreadY;
+
+point pos = point(uu,vv,0);
+
+// Add a random position
+vector vel = vector(spread);//vector(3.0*0.1);
+float DF = snoise(pos+vel)*0.25+0.25;
+float a= snoise(pos*vector(cos(3.0*0.15),sin(3.0*0.1)*0.1,0.0))*spread;
+
+vel = point(cos(radians(a)),sin(radians(a)),0);
+DF += snoise(pos+vel)*.25+.25;
+resultF=-(smoothstep(.7,.75,DF-floor(DF)))*dispScale; //fract)
 }
 
