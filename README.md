@@ -1,89 +1,54 @@
-# Renderman Lookdev Project Hour 4
+# Renderman Lookdev Project Hour 5
 
-The issue with the displacements took a long time to find, it was due to setting the displacement shader after the mesh. As I was using ObjectInstance this made sense however it seems the displacement attribute was not getting passed to the mesh as it needed to be called first. 
-
-I have now modified the test scene to use a subdiv surface as this work better with displacement's as well.
-
+Today started work on the stripes shader for the salt stripes (see Detail 3)
 ![](writeupImages/shaderTest.png)
 
-
-## Test scene
-
-```
-ri.AttributeBegin()
-
-ri.Attribute ('trace' ,{'int displacements' : [ 1 ], "int autobias" : [1] ,"float bias" : [0.1]})
-
-ri.Attribute ('displacementbound', {'float sphere' : [2], 'string coordinatesystem' : ['object']})
-
-ri.Pattern('rustDisplace','rustDisplace', 
-{ 
-  'float dispScale' : [0.015],
-  'float spread' : [12.638],
-  'float pointSpreadX' : [510.0],
-  'float pointSpreadY' : [210.0],
-    
-})
+The plan is to use this as a layer and add to the top of the base scene. Going to attempt this tomorrow. For now the basic shader still needs lots of work but gives the start point.
 
 
-
-
-ri.Displace( 'PxrDisplace' ,'displacement' ,
-{
-  'int enabled' : [1],
-  'float dispAmount' : [1.0],
-  'reference float dispScalar' : ['rustDisplace:resultF'] ,
-  'vector dispVector' : [0, 0 ,0],
-  'vector modelDispVector' : [0, 0 ,0],
-  'string __materialid' : ["mainplate"]
-})
-
-ri.Attribute( 'user' , {'string __materialid' : ['mainplate'] })
-plate=ri.ObjectBegin()
-ri.HierarchicalSubdivisionMesh("catmull-clark" ,[4 ,4 ,4 ,4, 4 ,4 ,4 ,4 ,4], 
-  [4, 5, 1, 0, 5, 6, 2, 1, 6, 7, 3, 2, 8 ,9, 5, 4, 9 ,10 ,6 ,5 ,10, 11, 7, 6, 12, 13, 9 ,8 ,13, 14, 10, 9, 14, 15, 11, 10], 
-  ["interpolateboundary"] ,[1 ,0 ,0] ,[2] ,[] ,[], 
-  {"P"  : [-1, -1, 0 ,-0.333333, -1, 0 ,0.333333, -1, 0, 1 ,-1, 0,      -1 ,-0.333333 ,0, -0.333333, -0.333333 ,0 ,0.333333 ,-0.333333, 0, 1, -0.333333 ,0,
-    -1, 0.333333 ,0, -0.333333 ,0.333333, 0, 0.333333, 0.333333 ,0, 1, 0.333333, 0,
-    -1, 1, 0, -0.333333, 1 ,0 ,0.333333, 1, 0 ,1 ,1, 0,]} )
-
-
-ri.ObjectEnd()
-ri.Bxdf ('PxrSurface' , 'mainplate', 
-{
-  'color diffuseColor' : [0.6,0.6,0.6] ,
-  'string __materialid' : ['mainplate']  
-})
-```
 
 ## Shader
-
-Now have the beginnings of a shader based on this one https://thebookofshaders.com/edit.php#11/lava-lamp.frag needs more work.
 ```
-surface rustDisplace (
-              float spread=2.638,
-              float pointSpreadX=1.0,
-              float pointSpreadY=1.0,
-              float dispScale=5.0,
-              output float resultF=0
-              )
+float pulse (float a,float b,float fuzz,float x)
 {
-float uu=u*pointSpreadX;
-float vv=v*pointSpreadY;
-vv *=pointSpreadX/pointSpreadY;
-uu *=pointSpreadX/pointSpreadY;
-
-point pos = point(uu,vv,0);
-
-// Add a random position
-vector vel = vector(spread);//vector(3.0*0.1);
-float DF = snoise(pos+vel)*0.25+0.25;
-float a= snoise(pos*vector(cos(3.0*0.15),sin(3.0*0.1)*0.1,0.0))*spread;
-
-vel = point(cos(radians(a)),sin(radians(a)),0);
-DF += snoise(pos+vel)*.25+.25;
-resultF=-(smoothstep(.7,.75,DF-floor(DF)))*dispScale; //fract)
+    return (smoothstep((a)-(fuzz), (a), (x)) - smoothstep((b)-(fuzz), (b), (x)));
 }
+
+
+float stripe(point Pos ,int Number,float uu, float vv)
+{
+  float Fac = 0;
+  float x = mod(Pos[0]+cos(noise("perlin",v)*sin(noise(v))),1);
+  int i;
+	
+  for(i=1; i <= Number; i++)
+	{
+    if( x < (float)i/Number )
+		{
+      Fac = i % 2;
+      break;
+    }
+  }
+	return Fac;
+}
+
+shader stripes(
+ color C1 = color(1,0,0),
+ color C2 = color(0,0,1),
+ float begin=0.3,
+ float end=0.6,
+ float repeat=8,
+ float fuzzy = 0.2,
+ output	color Cout=0 
+
+)
+{
+float uu=fmod(u*repeat,1.0);
+float vv=fmod(v*repeat,1.0);
+point pos=transform("world","shader",P);
+Cout=mix(C1,C2,stripe(pos,22,uu,vv));
+}
+
 ```
 
 

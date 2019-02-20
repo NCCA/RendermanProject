@@ -1,0 +1,43 @@
+float pulse (float a,float b,float fuzz,float x)
+{
+    return (smoothstep((a)-(fuzz), (a), (x)) - smoothstep((b)-(fuzz), (b), (x)));
+}
+
+
+float stripe(point Pos ,int Number,float uu, float vv)
+{
+  float Fac = 0;
+  float x = mod(Pos[0]+cos(noise("perlin",v)*sin(noise(v))),1);
+  int i;
+	
+  for(i=1; i <= Number; i++)
+	{
+    if( x < (float)i/Number )
+		{
+      Fac = i % 2;
+      break;
+    }
+  }
+	return Fac;
+}
+
+
+
+shader stripes(
+ color C1 = color(1,0,0),
+ color C2 = color(0,0,1),
+ float begin=0.3,
+ float end=0.6,
+ float repeat=8,
+ float fuzzy = 0.2,
+ output	color Cout=0 
+
+)
+{
+float uu=fmod(u*repeat,1.0);
+float vv=fmod(v*repeat,1.0);
+point pos=transform("world","shader",P);
+Cout=mix(C1,C2,stripe(pos,22,uu,vv));
+}
+
+

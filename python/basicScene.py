@@ -76,6 +76,12 @@ def main(filename,shadingrate=10,pixelvar=0.1,
       'integer specularModelType' : [1], 
       'string __materialid' : ['mainplate'],
   })
+
+
+  # ri.Pattern('PxrLayerMixer','surfaceLayer',{
+  #   ""
+  # })
+
   ri.Polygon({ 'P' : [-1 , 1 , 0, 
                        1 , 1 , 0, 
                        1,  -1.4 , 0, 
